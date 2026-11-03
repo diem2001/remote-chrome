@@ -1,0 +1,11 @@
+#!/bin/bash
+# labwc session entrypoint (overrides the lsio default, which would start a
+# single Chromium via the unquoted ${CHROME_CLI} — flags containing spaces get
+# split there, so we avoid it entirely).
+# All browser instances ("slots") are managed by the spawner: HTTP API on
+# :9230, one profile + one CDP port per slot, adaptive window tiling.
+while true; do
+    /lsiopy/bin/python3 /opt/spawner.py >> /config/spawner.log 2>&1
+    echo "$(date) spawner exited ($?), restarting" >> /config/spawner.log
+    sleep 2
+done

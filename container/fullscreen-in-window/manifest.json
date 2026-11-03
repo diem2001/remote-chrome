@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Fullscreen in window",
+  "version": "1.0",
+  "description": "remote-chrome: page fullscreen (e.g. YouTube) fills only the slot window instead of the whole shared desktop.",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["inject.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true,
+      "world": "MAIN"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+services:
+  chromium:
+    image: lscr.io/linuxserver/chromium:latest
+    container_name: remote-chrome
+    restart: unless-stopped
+    shm_size: 2gb
+    # Hard caps: the Docker VM is usually shared with other stacks.
+    # One heavy page must never starve the other stacks (or the Selkies stream).
+    cpus: 3
+    mem_limit: 6g
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: Europe/Berlin
+      # Fixed desktop resolution: 2x2 grid of 1440x900 browser windows (a
+      # 13" MacBook viewport per tile; 1280x720 made pages look broken). The
+      # Selkies client scales the stream down to the panel window; expanding a
+      # slot (overlay button or API /expand) shows it full-size over the grid.
+      SELKIES_IS_MANUAL_RESOLUTION_MODE: "true"
+      # Audio stutter mitigation: cap video encode at 30 fps (halves x264 CPU
+      # at 1800p -> headroom for the audio pipeline) and pin the audio bitrate
+      SELKIES_FRAMERATE: "8-30"
+      SELKIES_AUDIO_BITRATE: "128000"
+      SELKIES_MANUAL_WIDTH: "2880"
+      SELKIES_MANUAL_HEIGHT: "1800"
+      # Lock DPI at 96 (no scaling): otherwise a HiDPI viewer (Retina Mac)
+      # pushes scale 1.75-2.0, which shrinks the logical desktop (e.g.
+      # 1645x1028) and each slot's CSS viewport to ~822px wide.
+      SELKIES_SCALING_DPI: "96"
+      # Chromium flags do NOT go into CHROME_CLI (expanded unquoted; flags
+      # containing spaces get split) — they live in the mounted autostart.
+      # wmctrl is needed by the spawner's tiling (lsio universal-package-install mod):
+      DOCKER_MODS: linuxserver/mods:universal-package-install
+      INSTALL_PACKAGES: wmctrl
+      # reserved slots without CDP traffic for this long are auto-released
+      IDLE_MINUTES: "${IDLE_MINUTES:-15}"
+      # a FREE slot whose processes exceed this RSS gets refreshed automatically
+      # (raised from 1800: a single YouTube tab alone needs ~1.5-2 GB)
+      SLOT_MEM_MB: "${SLOT_MEM_MB:-3000}"
+      # optional Chromium --host-resolver-rules (see docker-compose.override.example.yml)
+      HOST_RESOLVER_RULES: "${HOST_RESOLVER_RULES:-}"
+    volumes:
+      # persistent browser profile (cookies, logins, preferences)
+      - kasm-config:/config
+      # Session entrypoint: runs the slot spawner (overrides the lsio default).
+      # Note: the session is labwc/Wayland (Selkies), not openbox!
+      - ./container/autostart:/config/.config/labwc/autostart:ro
+      # Slot manager: claim/release/status API + adaptive window tiling
+      - ./container/spawner.py:/opt/spawner.py:ro
+      # init script: chromium policy (disable translate bubble)
+      - ./container/cont-init.d:/custom-cont-init.d:ro
+      # labwc config without titlebar buttons (no iconify/close) and without
+      # close keybinds — a minimized/closed window could not be recovered
+      - ./container/rc.xml:/config/.config/labwc/rc.xml:ro
+      # extension: page fullscreen stays inside the slot window
+      - ./container/fullscreen-in-window:/opt/fullscreen-in-window:ro
+    ports:
+      # Wall page: Selkies stream in an iframe + expand/collapse overlay
+      # (served by the spawner, which also hosts the slot API)
+      - "127.0.0.1:6080:9230"
+      # Raw Selkies web UI (embedded by the wall page; direct fallback)
+      - "127.0.0.1:6081:3000"
+      # CDP per slot (socat) — slot N on host port (9221+N); slot 1 stays on
+      # 9222, where the chrome-devtools-remote MCP expects it
+      - "127.0.0.1:9222:9251"
+      - "127.0.0.1:9223:9252"
+      - "127.0.0.1:9224:9253"
+      - "127.0.0.1:9225:9254"
+      # spawner API (claim/release/status)
+      - "127.0.0.1:9230:9230"
+    # Site-specific network attachments (e.g. a shared reverse-proxy network)
+    # live in docker-compose.override.yml (git-ignored; see
+    # docker-compose.override.example.yml) — this base file runs standalone.
+
+volumes:
+  kasm-config:

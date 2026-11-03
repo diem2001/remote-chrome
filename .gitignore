@@ -1,0 +1,6 @@
+screenshots/
+*.log
+# site-specific compose extras (see docker-compose.override.example.yml)
+docker-compose.override.yml
+docker-compose.override.yml.disabled
+__pycache__/

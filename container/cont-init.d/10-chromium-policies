@@ -1,0 +1,16 @@
+#!/bin/bash
+# Chromium enterprise policies. Flags no longer work for these (Chrome 142+);
+# only the managed policy does. Written at init because slot profiles are
+# wiped on release and would lose any profile pref.
+#   TranslateEnabled            — no translate bubble
+#   PasswordManagerEnabled      — no "Save password?" bubble after logins
+#   PasswordLeakDetectionEnabled — no "password found in a data breach" popup
+mkdir -p /etc/chromium/policies/managed
+rm -f /etc/chromium/policies/managed/no-translate.json
+cat > /etc/chromium/policies/managed/remote-chrome.json <<'EOF'
+{
+  "TranslateEnabled": false,
+  "PasswordManagerEnabled": false,
+  "PasswordLeakDetectionEnabled": false
+}
+EOF

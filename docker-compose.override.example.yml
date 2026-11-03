@@ -1,0 +1,18 @@
+# Example site-specific extras. Copy to docker-compose.override.yml (git-ignored;
+# auto-loaded by docker compose alongside docker-compose.yml) and adapt.
+#
+# Use case: reach local dev stacks behind a reverse proxy container on a shared
+# Docker network. On the host such dev domains often resolve to 127.0.0.1,
+# which is useless inside the container — so the slot browsers map them
+# directly to the proxy container instead.
+services:
+  chromium:
+    environment:
+      HOST_RESOLVER_RULES: "MAP *.dev.example my-reverse-proxy"
+    networks:
+      - default
+      - my-dev-network
+
+networks:
+  my-dev-network:
+    external: true
