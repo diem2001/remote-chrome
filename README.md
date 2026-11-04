@@ -225,6 +225,12 @@ inside the container will not resolve these names.
   then `dmesg` shows `chromium: VideoFrameCompo: ... fatal signal 4`.
 - **Spawner log**: `docker exec remote-chrome tail -f /config/spawner.log` —
   every claim/release/retile decision is logged there (not in `docker logs`).
+- **Black wall / "Waiting for stream…"**: a hidden Selkies page sends
+  STOP_VIDEO, and if it is the display's owner (first page connected) the
+  capture stops for every viewer. The wall page therefore drops its stream
+  connection after being hidden for 3 s and reconnects when shown again.
+  With an older wall page still open somewhere, close all :6080/:6081 tabs
+  and open one fresh.
 - Without a connected viewer the desktop idles at 1280×720; the fixed
   2880×1800 applies when a viewer connects. The retile loop re-fits the
   slots within ~2s either way — sizes in between are not a bug.
