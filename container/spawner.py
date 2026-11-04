@@ -518,6 +518,20 @@ WALL_HTML = """<!doctype html>
 const stream = document.getElementById('stream');
 stream.src = new URLSearchParams(location.search).get('stream')
           || location.protocol + '//' + location.hostname + ':6081/';
+const streamUrl = stream.src;
+// A hidden Selkies page sends STOP_VIDEO; if it is the display's owner (the
+// first page connected), the capture stops for every viewer and later pages
+// only join beside it -> black wall. So a page hidden for a few seconds drops
+// its stream connection entirely, and reconnects when shown again.
+let hideTimer = null;
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        hideTimer = setTimeout(() => { stream.src = 'about:blank'; }, 3000);
+    } else {
+        clearTimeout(hideTimer);
+        if (stream.src !== streamUrl) stream.src = streamUrl;
+    }
+});
 const overlay = document.getElementById('overlay');
 let expanded = null;
 let aspect = 2880 / 1800;   // updated from /status (desktop geometry)
