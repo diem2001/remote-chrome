@@ -546,7 +546,7 @@ function contentRect() {
 function applyZoom() {
     // view-only expand: zoom the stream into the slot's quadrant; the
     // browser window itself keeps its real size
-    if (!expanded) { stream.style.transform = ''; return; }
+    if (!expanded) { stream.style.transform = ''; stream.style.clipPath = ''; return; }
     const W = innerWidth, H = innerHeight, r = contentRect();
     const col = (expanded - 1) % 2, row = (expanded - 1) >> 1;
     const qx = r.x + col * r.w / 2, qy = r.y + row * r.h / 2;
@@ -554,6 +554,12 @@ function applyZoom() {
     const s = Math.min(W / qw, H / qh);
     const tx = (W - qw * s) / 2 - qx * s, ty = (H - qh * s) / 2 - qy * s;
     stream.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + s + ')';
+    // show only the slot's quadrant: with a window whose aspect differs from
+    // the desktop's (e.g. portrait), the neighbouring slots would otherwise
+    // fill the leftover space. clip-path uses the iframe's own (untransformed)
+    // coordinates.
+    stream.style.clipPath = 'inset(' + qy + 'px ' + (W - qx - qw) + 'px ' +
+        (H - qy - qh) + 'px ' + qx + 'px)';
 }
 
 function makeBtn(text, title, x, y, b, onclick) {
